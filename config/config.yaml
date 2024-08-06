@@ -2,5 +2,5 @@
 logger:
   path:    "./logs"
   level:   "all"
-  stdout:  false
+  stdout:  true
 

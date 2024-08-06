@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"sync"
@@ -15,16 +14,16 @@ import (
 func StartHttpProxy(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error listening: %s\n", err.Error())
+		g.Log().Warningf(context.Background(), "Error listening: %s", err.Error())
 		os.Exit(1)
 	}
 	defer listener.Close()
-	g.Log().Infof(context.Background(), "listen on %v", addr)
+	g.Log().Infof(context.Background(), "http proxy listen on %v", addr)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error accepting: %s\n", err.Error())
+			g.Log().Warningf(context.Background(), "Error accepting: %s", err.Error())
 			os.Exit(1)
 		}
 

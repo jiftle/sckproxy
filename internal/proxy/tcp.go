@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -19,16 +18,16 @@ import (
 func StartTcpProxy(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error listening: %s\n", err.Error())
+		g.Log().Warningf(context.Background(), "Error listening: %s", err.Error())
 		os.Exit(1)
 	}
 	defer listener.Close()
-	g.Log().Infof(context.Background(), "listen on %v", addr)
+	g.Log().Infof(context.Background(), "socket5 proxy listen on %v", addr)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error accepting: %s\n", err.Error())
+			g.Log().Warningf(context.Background(), "Error accepting: %v", err.Error())
 			os.Exit(1)
 		}
 

@@ -1,14 +1,19 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"strings"
 
+	"github.com/gogf/gf/v2/frame/g"
 	"github.com/jiftle/sckproxy/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
 var (
 	addr string
+	mode string
 )
 
 var rootCmd = &cobra.Command{
@@ -16,8 +21,14 @@ var rootCmd = &cobra.Command{
 	Short: "socket5 proxy",
 	Long:  `socket5 proxy written by golang.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// proxy.StartTcpProxy(addr)
-		proxy.StartHttpProxy(addr)
+		if strings.EqualFold(mode, "socket") {
+			proxy.StartTcpProxy(addr)
+		} else if strings.EqualFold(mode, "http") {
+			proxy.StartHttpProxy(addr)
+		} else {
+			g.Log().Warningf(context.Background(), "don't support mode: %v", mode)
+			fmt.Printf("don't support mode: %v\n", mode)
+		}
 	},
 }
 
@@ -30,4 +41,5 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&addr, "listen", "l", ":1080", "listen addr. eg. :1080")
+	rootCmd.Flags().StringVarP(&mode, "mode", "m", "socket", "socket,http")
 }
