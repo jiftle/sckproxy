@@ -1,9 +1,11 @@
-package internal
+package proxy
 
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"sync"
@@ -14,7 +16,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-func Start(addr string) {
+func StartTcpProxy(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error listening: %s\n", err.Error())
@@ -43,7 +45,6 @@ func handleRequest(conn net.Conn) {
 		g.Log().Warningf(context.Background(), "handshake read err,%v", err)
 		return
 	}
-	// g.Log().Infof(context.Background(), "recv: %v", hex.EncodeToString(buf[:nr]))
 
 	var pt proto.ProtocolVersion
 
@@ -52,7 +53,6 @@ func handleRequest(conn net.Conn) {
 		g.Log().Warningf(context.Background(), "handshake err,%v", err)
 		return
 	}
-	// g.Log().Infof(context.Background(), "send: %v", hex.EncodeToString(resp))
 	_, err = conn.Write(resp)
 	if err != nil {
 		g.Log().Warningf(context.Background(), "handshake write err,%v", err)
@@ -60,9 +60,12 @@ func handleRequest(conn net.Conn) {
 	}
 
 	for {
-		buf = make([]byte, 1024*4)
+		buf = make([]byte, 1024*32)
 		nr, err := reader.Read(buf)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
 			g.Log().Warningf(context.Background(), "handshake read err,%v", err)
 			return
 		}
@@ -80,7 +83,7 @@ func handleRequest(conn net.Conn) {
 			g.Log().Warningf(context.Background(), "handshake write err,%v", err)
 			return
 		}
-		g.Log().Infof(context.Background(), "%s, %s:%d", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT)
+		g.Log().Infof(context.Background(), "%s accepted %s:%d", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT)
 
 		dstServer, err := net.DialTCP("tcp", nil, request.RAWADDR)
 		if err != nil {
@@ -94,7 +97,7 @@ func handleRequest(conn net.Conn) {
 
 		go func() {
 			defer wg.Done()
-			n, err := IoCopy(conn, dstServer)
+			n, err := utils.IoCopy(conn, dstServer)
 			if err != nil {
 				g.Log().Warningf(context.Background(), "c->s, send fail, %v", err)
 			} else {
@@ -104,7 +107,7 @@ func handleRequest(conn net.Conn) {
 
 		go func() {
 			defer wg.Done()
-			n, err := IoCopy(dstServer, conn)
+			n, err := utils.IoCopy(dstServer, conn)
 			if err != nil {
 				g.Log().Warningf(context.Background(), "s->c, send fail, %v", err)
 			} else {

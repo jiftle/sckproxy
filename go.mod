@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	github.com/gogf/gf/v2 v2.7.2
 	github.com/spf13/cobra v1.8.1
+	golang.org/x/time v0.6.0
 )
 
 require (

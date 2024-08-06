@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/jiftle/sckproxy/internal"
+	"github.com/jiftle/sckproxy/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,8 @@ var rootCmd = &cobra.Command{
 	Short: "socket5 proxy",
 	Long:  `socket5 proxy written by golang.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		internal.Start(addr)
+		// proxy.StartTcpProxy(addr)
+		proxy.StartHttpProxy(addr)
 	},
 }
 
