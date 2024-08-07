@@ -38,6 +38,7 @@ func handleHttpRequest(conn net.Conn) {
 		return
 	}
 
+	clientAddr := conn.RemoteAddr().String()
 	address := req.Host
 
 	dstServer, err := net.DialTimeout("tcp", address, 3*time.Second)
@@ -66,7 +67,7 @@ func handleHttpRequest(conn net.Conn) {
 		if err != nil {
 			g.Log().Warningf(context.Background(), "c->s, send err, %v", err)
 		} else {
-			g.Log().Infof(context.Background(), "c->s, %s,len=%s", address, utils.BytesSize2Str(n))
+			g.Log().Infof(context.Background(), "%v->%v,len=%s", clientAddr, address, utils.BytesSize2Str(n))
 		}
 	}()
 
@@ -76,7 +77,7 @@ func handleHttpRequest(conn net.Conn) {
 		if err != nil {
 			g.Log().Warningf(context.Background(), "s->c, send err, %v", err)
 		} else {
-			g.Log().Infof(context.Background(), "s->c, %s,len=%s", address, utils.BytesSize2Str(n))
+			g.Log().Infof(context.Background(), "%v->%v,len=%s", address, clientAddr, utils.BytesSize2Str(n))
 		}
 	}()
 	wg.Wait()

@@ -3,7 +3,7 @@ package utils
 import "io"
 
 func IoCopy(src io.ReadWriteCloser, dst io.ReadWriteCloser) (written int64, err error) {
-	size := 1024 * 10 * 4
+	size := 1024 * 32
 	buf := make([]byte, size)
 	for {
 		nr, er := src.Read(buf)
@@ -28,5 +28,5 @@ func IoCopy(src io.ReadWriteCloser, dst io.ReadWriteCloser) (written int64, err 
 			break
 		}
 	}
-	return written, nil
+	return
 }
