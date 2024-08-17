@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/jiftle/sckproxy/internal/proto"
@@ -37,6 +38,8 @@ func StartSocket5Proxy(addr string) {
 
 func handleRequest(conn net.Conn) {
 	defer conn.Close()
+	clientAddr := conn.RemoteAddr().String()
+
 	reader := bufio.NewReader(conn)
 	buf := make([]byte, 1024)
 	nr, err := reader.Read(buf)
@@ -73,7 +76,7 @@ func handleRequest(conn net.Conn) {
 		var request proto.Socks5Resolution
 		resp, err = request.LSTRequest(buf[0:nr])
 		if err != nil {
-			g.Log().Warningf(context.Background(), "LST请求失败, %v", err)
+			g.Log().Warningf(context.Background(), "LST request err,%v", err)
 			return
 		}
 		// g.Log().Infof(context.Background(), "send: %v", hex.EncodeToString(resp))
@@ -98,9 +101,14 @@ func handleRequest(conn net.Conn) {
 			defer wg.Done()
 			n, err := utils.IoCopy(conn, dstServer)
 			if err != nil {
-				g.Log().Warningf(context.Background(), "c->s, send fail, %v", err)
+				if strings.Contains(err.Error(), "connection reset by peer") {
+					return
+				} else if strings.Contains(err.Error(), "write: broken pipe") {
+					return
+				}
+				g.Log().Warningf(context.Background(), "%v->%s:%d, send fail,%v", clientAddr, request.DSTDOMAIN, request.DSTPORT, err)
 			} else {
-				g.Log().Infof(context.Background(), "c->s, %s:%d,len=%s", request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%v->%s:%d,len=%s", clientAddr, request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
 			}
 		}()
 
@@ -108,9 +116,14 @@ func handleRequest(conn net.Conn) {
 			defer wg.Done()
 			n, err := utils.IoCopy(dstServer, conn)
 			if err != nil {
-				g.Log().Warningf(context.Background(), "s->c, send fail, %v", err)
+				if strings.Contains(err.Error(), "connection reset by peer") {
+					return
+				} else if strings.Contains(err.Error(), "write: broken pipe") {
+					return
+				}
+				g.Log().Warningf(context.Background(), "%s:%d->%v, send fail,%v", request.DSTDOMAIN, request.DSTPORT, clientAddr, err)
 			} else {
-				g.Log().Infof(context.Background(), "s->c, %s:%d,len=%s", request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%s:%d->%v, ,len=%s", request.DSTDOMAIN, request.DSTPORT, clientAddr, utils.BytesSize2Str(n))
 			}
 		}()
 		wg.Wait()
