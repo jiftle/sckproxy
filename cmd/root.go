@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 	Long:  `socket5 proxy written by golang.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if strings.EqualFold(mode, "socket") {
-			proxy.StartTcpProxy(addr)
+			proxy.StartSocket5Proxy(addr)
 		} else if strings.EqualFold(mode, "http") {
 			proxy.StartHttpProxy(addr)
 		} else {

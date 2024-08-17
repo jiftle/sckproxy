@@ -15,7 +15,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-func StartTcpProxy(addr string) {
+func StartSocket5Proxy(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		g.Log().Warningf(context.Background(), "Error listening: %s", err.Error())
