@@ -21,8 +21,10 @@ var rootCmd = &cobra.Command{
 	Short: "socket5 proxy",
 	Long:  `socket5 proxy written by golang.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// g.Log().SetFlags(g.Log().GetFlags() | glog.F_FILE_SHORT) //log contain filename and linenum
+
 		if strings.EqualFold(mode, "socket") {
-			proxy.StartTcpProxy(addr)
+			proxy.StartSocket5Proxy(addr)
 		} else if strings.EqualFold(mode, "http") {
 			proxy.StartHttpProxy(addr)
 		} else {

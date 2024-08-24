@@ -7,7 +7,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiftle/sckproxy/internal/proto"
 	"github.com/jiftle/sckproxy/internal/utils"
@@ -15,7 +17,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 )
 
-func StartTcpProxy(addr string) {
+func StartSocket5Proxy(addr string) {
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		g.Log().Warningf(context.Background(), "Error listening: %s", err.Error())
@@ -37,6 +39,8 @@ func StartTcpProxy(addr string) {
 
 func handleRequest(conn net.Conn) {
 	defer conn.Close()
+	clientAddr := conn.RemoteAddr().String()
+
 	reader := bufio.NewReader(conn)
 	buf := make([]byte, 1024)
 	nr, err := reader.Read(buf)
@@ -73,7 +77,7 @@ func handleRequest(conn net.Conn) {
 		var request proto.Socks5Resolution
 		resp, err = request.LSTRequest(buf[0:nr])
 		if err != nil {
-			g.Log().Warningf(context.Background(), "LST请求失败, %v", err)
+			g.Log().Warningf(context.Background(), "LST request err,%v", err)
 			return
 		}
 		// g.Log().Infof(context.Background(), "send: %v", hex.EncodeToString(resp))
@@ -82,9 +86,9 @@ func handleRequest(conn net.Conn) {
 			g.Log().Warningf(context.Background(), "handshake write err,%v", err)
 			return
 		}
-		g.Log().Infof(context.Background(), "%s accepted %s:%d", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT)
+		g.Log().Infof(context.Background(), "%s accepted %s:%d[%s]", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT, request.RAWADDR.String())
 
-		dstServer, err := net.DialTCP("tcp", nil, request.RAWADDR)
+		dstServer, err := net.DialTimeout("tcp", request.RAWADDR.String(), time.Second*3)
 		if err != nil {
 			g.Log().Warningf(context.Background(), "connect %s err,%s", request.RAWADDR.String(), err.Error())
 			return
@@ -98,9 +102,14 @@ func handleRequest(conn net.Conn) {
 			defer wg.Done()
 			n, err := utils.IoCopy(conn, dstServer)
 			if err != nil {
-				g.Log().Warningf(context.Background(), "c->s, send fail, %v", err)
+				if strings.Contains(err.Error(), "connection reset by peer") {
+					return
+				} else if strings.Contains(err.Error(), "write: broken pipe") {
+					return
+				}
+				g.Log().Warningf(context.Background(), "%v->%s, send fail,%v", clientAddr, request.RAWADDR.String(), err)
 			} else {
-				g.Log().Infof(context.Background(), "c->s, %s:%d,len=%s", request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%v->%s,len=%s", clientAddr, request.RAWADDR.String(), utils.BytesSize2Str(n))
 			}
 		}()
 
@@ -108,9 +117,14 @@ func handleRequest(conn net.Conn) {
 			defer wg.Done()
 			n, err := utils.IoCopy(dstServer, conn)
 			if err != nil {
-				g.Log().Warningf(context.Background(), "s->c, send fail, %v", err)
+				if strings.Contains(err.Error(), "connection reset by peer") {
+					return
+				} else if strings.Contains(err.Error(), "write: broken pipe") {
+					return
+				}
+				g.Log().Warningf(context.Background(), "%s->%v, send fail,%v", request.RAWADDR.String(), clientAddr, err)
 			} else {
-				g.Log().Infof(context.Background(), "s->c, %s:%d,len=%s", request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%s->%v, ,len=%s", request.RAWADDR.String(), clientAddr, utils.BytesSize2Str(n))
 			}
 		}()
 		wg.Wait()

@@ -1,5 +1,5 @@
 logger:
-  path:    "./logs"
+  path:    "/var/log/skpy"
   level:   "all"
   stdout:  true
   RotateExpire: "3d"
