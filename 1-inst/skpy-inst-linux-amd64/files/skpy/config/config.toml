@@ -1,5 +1,0 @@
-[logger]
-    path   = "/var/log/skpy"
-    level  = "info"
-    stdout = true
-

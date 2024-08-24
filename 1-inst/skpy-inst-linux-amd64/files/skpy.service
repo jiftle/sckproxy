@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 WorkingDirectory=/opt/my-apps/skpy
-ExecStart=/opt/my-apps/skpy/skpy
+ExecStart=/opt/my-apps/skpy/skpy -l :21180
 ExecReload=/bin/kill -s HUP $MAINPID
 
 

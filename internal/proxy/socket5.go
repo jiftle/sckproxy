@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiftle/sckproxy/internal/proto"
 	"github.com/jiftle/sckproxy/internal/utils"
@@ -85,9 +86,9 @@ func handleRequest(conn net.Conn) {
 			g.Log().Warningf(context.Background(), "handshake write err,%v", err)
 			return
 		}
-		g.Log().Infof(context.Background(), "%s accepted %s:%d", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT)
+		g.Log().Infof(context.Background(), "%s accepted %s:%d[%s]", conn.RemoteAddr().String(), request.DSTDOMAIN, request.DSTPORT, request.RAWADDR.String())
 
-		dstServer, err := net.DialTCP("tcp", nil, request.RAWADDR)
+		dstServer, err := net.DialTimeout("tcp", request.RAWADDR.String(), time.Second*3)
 		if err != nil {
 			g.Log().Warningf(context.Background(), "connect %s err,%s", request.RAWADDR.String(), err.Error())
 			return
@@ -106,9 +107,9 @@ func handleRequest(conn net.Conn) {
 				} else if strings.Contains(err.Error(), "write: broken pipe") {
 					return
 				}
-				g.Log().Warningf(context.Background(), "%v->%s:%d, send fail,%v", clientAddr, request.DSTDOMAIN, request.DSTPORT, err)
+				g.Log().Warningf(context.Background(), "%v->%s, send fail,%v", clientAddr, request.RAWADDR.String(), err)
 			} else {
-				g.Log().Infof(context.Background(), "%v->%s:%d,len=%s", clientAddr, request.DSTDOMAIN, request.DSTPORT, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%v->%s,len=%s", clientAddr, request.RAWADDR.String(), utils.BytesSize2Str(n))
 			}
 		}()
 
@@ -121,9 +122,9 @@ func handleRequest(conn net.Conn) {
 				} else if strings.Contains(err.Error(), "write: broken pipe") {
 					return
 				}
-				g.Log().Warningf(context.Background(), "%s:%d->%v, send fail,%v", request.DSTDOMAIN, request.DSTPORT, clientAddr, err)
+				g.Log().Warningf(context.Background(), "%s->%v, send fail,%v", request.RAWADDR.String(), clientAddr, err)
 			} else {
-				g.Log().Infof(context.Background(), "%s:%d->%v, ,len=%s", request.DSTDOMAIN, request.DSTPORT, clientAddr, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%s->%v, ,len=%s", request.RAWADDR.String(), clientAddr, utils.BytesSize2Str(n))
 			}
 		}()
 		wg.Wait()

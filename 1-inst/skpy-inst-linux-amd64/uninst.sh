@@ -8,6 +8,7 @@ rm -f /etc/systemd/system/skpy.service
 
 echo "  |--> 删除文件"
 rm -rf /opt/my-apps/skpy
+rm -rf /var/log/skpy
 
 echo "  |--> 服务刷新"
 systemctl daemon-reload
