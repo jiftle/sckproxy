@@ -1,11 +1,14 @@
 package proto
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/gogf/gf/v2/frame/g"
 )
 
 const (
@@ -65,6 +68,7 @@ func (s *ProtocolVersion) HandleHandshake(b []byte) ([]byte, error) {
 	}
 
 	if useMethod != METHOD_CODE {
+		g.Log().Warningf(context.Background(), "unknown, ---> %02x", useMethod)
 		return nil, errors.New("proto method err")
 	}
 	resp := []byte{SOCKS_VERSION, useMethod}
@@ -102,7 +106,7 @@ func (s *Socks5AuthUPasswd) HandleAuth(b []byte) ([]byte, error) {
 
 	s.VER = b[0]
 	if s.VER != 5 {
-		return nil, errors.New("just support socket5")
+		return nil, fmt.Errorf("just support socket5,but ver=%v", s.VER)
 	}
 
 	s.ULEN = b[1]
@@ -126,7 +130,6 @@ func (s *Socks5AuthUPasswd) HandleAuth(b []byte) ([]byte, error) {
 	  connection.
 	*/
 	resp := []byte{SOCKS_VERSION, 0x00}
-	// conn.Write(resp)
 
 	return resp, nil
 }
@@ -161,7 +164,7 @@ func (s *Socks5Resolution) LSTRequest(b []byte) ([]byte, error) {
 	}
 	s.VER = b[0]
 	if s.VER != SOCKS_VERSION {
-		return nil, errors.New("just support socket5")
+		return nil, fmt.Errorf("just support socket5,but ver=%d", s.VER)
 	}
 
 	s.CMD = b[1]

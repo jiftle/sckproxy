@@ -3,3 +3,7 @@ sckproxy
 *.exe
 
 logs/
+build/
+
+
+skpy
