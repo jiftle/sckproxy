@@ -105,7 +105,7 @@ func handleRequest(conn net.Conn) {
 				} else if strings.Contains(err.Error(), "write: broken pipe") {
 					return
 				}
-				g.Log().Warningf(context.Background(), "%v->%s, send fail,%v", clientAddr, request.RAWADDR.String(), err)
+				g.Log().Warningf(context.Background(), "%v->%s,send fail,%v", clientAddr, request.RAWADDR.String(), err)
 			} else {
 				g.Log().Infof(context.Background(), "%v->%s,len=%s", clientAddr, request.RAWADDR.String(), utils.BytesSize2Str(n))
 			}
@@ -120,9 +120,9 @@ func handleRequest(conn net.Conn) {
 				} else if strings.Contains(err.Error(), "write: broken pipe") {
 					return
 				}
-				g.Log().Warningf(context.Background(), "%s->%v, send fail,%v", request.RAWADDR.String(), clientAddr, err)
+				g.Log().Warningf(context.Background(), "%s->%v,send fail,%v", request.RAWADDR.String(), clientAddr, err)
 			} else {
-				g.Log().Infof(context.Background(), "%s->%v, ,len=%s", request.RAWADDR.String(), clientAddr, utils.BytesSize2Str(n))
+				g.Log().Infof(context.Background(), "%s->%v,len=%s", request.RAWADDR.String(), clientAddr, utils.BytesSize2Str(n))
 			}
 		}()
 		wg.Wait()
